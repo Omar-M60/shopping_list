@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+
+import 'package:http/http.dart' as http;
 
 import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/category.model.dart';
@@ -20,16 +24,38 @@ class _GroceriesFormScreenState extends State<GroceriesFormScreen> {
   var _inputQuantity = 1;
   var _inputCategory = categories[Categories.dairy]!;
 
-  void _saveItems() {
+  void _saveItems(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      Navigator.of(context).pop(
-        Grocery(
-            id: DateTime.now().toString(),
+      final url = Uri.https(
+        'shopping-list-1ba7a-default-rtdb.asia-southeast1.firebasedatabase.app',
+        'groceries.json',
+      );
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(
+          {
+            'name': _inputTitle,
+            'quantity': _inputQuantity,
+            'category': _inputCategory.title,
+          },
+        ),
+      );
+
+      final Map<String, dynamic> resData = json.decode(response.body);
+      if (context.mounted) {
+        Navigator.of(context).pop(
+          Grocery(
+            id: resData['name'],
             name: _inputTitle,
             quantity: _inputQuantity,
-            category: _inputCategory),
-      );
+            category: _inputCategory,
+          ),
+        );
+      }
     }
   }
 
@@ -137,7 +163,7 @@ class _GroceriesFormScreenState extends State<GroceriesFormScreen> {
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
-                    onPressed: _saveItems,
+                    onPressed: () => _saveItems(context),
                     style: Theme.of(context).elevatedButtonTheme.style,
                     child: const Text("Add Item"),
                   ),

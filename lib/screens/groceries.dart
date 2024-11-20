@@ -1,4 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+
+import 'package:http/http.dart' as http;
+import 'package:shopping_list/data/categories.dart';
+
 import 'package:shopping_list/models/grocery.model.dart';
 import 'package:shopping_list/screens/groceries_form.dart';
 // import 'package:shopping_list/widgets/groceries_list.dart';
@@ -11,7 +17,39 @@ class GroceriesScreen extends StatefulWidget {
 }
 
 class _GroceriesScreenState extends State<GroceriesScreen> {
-  final List<Grocery> _groceries = [];
+  List<Grocery> _groceries = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGroceries();
+  }
+
+  void _fetchGroceries() async {
+    final url = Uri.https(
+      'shopping-list-1ba7a-default-rtdb.asia-southeast1.firebasedatabase.app',
+      'groceries.json',
+    );
+    final response = await http.get(url);
+    final Map<String, dynamic> loadedGroceries = json.decode(response.body);
+    final List<Grocery> loadedGroceriesList = [];
+    for (final grocery in loadedGroceries.entries) {
+      final category = categories.entries
+          .firstWhere((item) => grocery.value['category'] == item.value.title)
+          .value;
+      loadedGroceriesList.add(
+        Grocery(
+          id: grocery.key,
+          name: grocery.value['name'],
+          quantity: grocery.value['quantity'],
+          category: category,
+        ),
+      );
+    }
+    setState(() {
+      _groceries = loadedGroceriesList;
+    });
+  }
 
   void _addGrocery() async {
     final results = await Navigator.push<Grocery>(
@@ -20,7 +58,6 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
         builder: (ctx) => const GroceriesFormScreen(),
       ),
     );
-
     if (results != null) {
       setState(() {
         _groceries.add(results);
