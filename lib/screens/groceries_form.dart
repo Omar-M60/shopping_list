@@ -23,10 +23,14 @@ class _GroceriesFormScreenState extends State<GroceriesFormScreen> {
   var _inputTitle = "";
   var _inputQuantity = 1;
   var _inputCategory = categories[Categories.dairy]!;
+  bool _isSending = false;
 
   void _saveItems(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      setState(() {
+        _isSending = true;
+      });
       final url = Uri.https(
         'shopping-list-1ba7a-default-rtdb.asia-southeast1.firebasedatabase.app',
         'groceries.json',
@@ -155,17 +159,27 @@ class _GroceriesFormScreenState extends State<GroceriesFormScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () {
-                      _formKey.currentState!.reset();
-                    },
+                    onPressed: _isSending
+                        ? null
+                        : () {
+                            _formKey.currentState!.reset();
+                          },
                     style: Theme.of(context).textButtonTheme.style,
                     child: const Text("Reset"),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
-                    onPressed: () => _saveItems(context),
+                    onPressed: _isSending ? null : () => _saveItems(context),
                     style: Theme.of(context).elevatedButtonTheme.style,
-                    child: const Text("Add Item"),
+                    child: _isSending
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          )
+                        : const Text("Add Item"),
                   ),
                 ],
               ),
